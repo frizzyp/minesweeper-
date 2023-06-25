@@ -1,6 +1,8 @@
-from tkinter import Button, Label
+from tkinter import Button, Label, messagebox
 import random
 import settings
+import sys
+
 class Cell:
     all=[]
     cell_count= settings.CELL_COUNT
@@ -10,6 +12,7 @@ class Cell:
         self.x=x
         self.y=y
         self.is_opened=False
+        self.is_mine_candidate=False
         self.cell_btn_object=None 
 
         Cell.all.append(self) #to access class methods within the class itself Cell.all is used
@@ -34,10 +37,18 @@ class Cell:
                 for cell_obj in self.surrounded_cells:
                     cell_obj.show_cell()
 
+            if Cell.cell_count == settings.MINES_COUNT:
+                messagebox.showinfo("Game won", "Congratulations!!")
+                sys.exit(1)
+
+        self.cell_btn_object.unbind('<Button-1>')
+        self.cell_btn_object.unbind('<Button-3>')
+
     def get_cell_by_axis(self, x, y):
         for cell in Cell.all:
             if cell.x==x and cell.y==y:
                 return cell
+
     @property
     def surrounded_cells(self):
         cells=[
@@ -73,17 +84,34 @@ class Cell:
                 Cell.cell_count_label_object.configure(text=
                 f"Cells left: {Cell.cell_count}"
                 ) 
+
+            #If this was a mine candidate, then after clicking on it, the color should be re-changed to systembg
+            self.cell_btn_object.configure(
+                bg='SystemButton'
+            )
+
         self.is_opened=True
     
     def show_mine(self):
         self.cell_btn_object.configure(bg='red')
-    
-    def right_click_actions(self, event):
-        print(event)
+        messagebox.showinfo("Game lost", "You clicked on a mine!!")
+        sys.exit(0)
 
+
+    def right_click_actions(self, event):
+        if not self.is_mine_candidate:
+            self.cell_btn_object.configure(
+                bg='orange'
+            )
+            self.is_mine_candidate= True #because user has guessed it to be true
+        else:
+            self.cell_btn_object.configure(
+                bg='SystemButtonFace'
+            )
+            self.is_mine_candidate=False
+             
     @staticmethod
-    def randomize_mines():
-        
+    def randomize_mines():        
         picked_cells=random.sample(
             Cell.all,
             settings.MINES_COUNT)
